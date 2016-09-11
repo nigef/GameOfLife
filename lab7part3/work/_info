@@ -1,0 +1,177 @@
+m255
+K3
+13
+cModel Technology
+Z0 dC:\altera\13.0\Projects\lab7part3
+vcontrol
+!i10b 1
+Z1 !s100 _@CECzeX?4X<C`_78IJk=1
+Z2 ImCTkI<f8X:0CeBS9j:i8_0
+Z3 VhcW7U_;[^ML86:8k8hmc[2
+Z4 dC:\altera\13.0\Projects\lab7part3
+Z5 w1459896186
+Z6 8lab7part3.v
+Z7 Flab7part3.v
+Z8 L0 409
+Z9 OV;L;10.1d;51
+r1
+!s85 0
+31
+Z10 !s108 1459898655.859000
+Z11 !s107 vga_pll.v|vga_controller.v|vga_address_translator.v|vga_adapter.v|lab7part3.v|hex_decoder.v|
+Z12 !s90 -reportprogress|300|hex_decoder.v|lab7part3.v|vga_adapter.v|vga_address_translator.v|vga_controller.v|vga_pll.v|
+!s101 -O0
+o-O0
+vdatapath
+!i10b 1
+Z13 !s100 eam^nP>X5[]aEiA:F5nfk0
+Z14 Ifo<=aV:?N;G_o8JjiIdD_0
+Z15 VoeBfMW1JlYhk?BOH?b`5e3
+R4
+R5
+R6
+R7
+Z16 L0 641
+R9
+r1
+!s85 0
+31
+R10
+R11
+R12
+!s101 -O0
+o-O0
+vhex_decoder
+!i10b 1
+Z17 !s100 mjMcJ?6E_4Mf7AEkJ76;P0
+Z18 IbidUdZol=S;Yk[3ZQ<MO60
+Z19 VdTQgbb?KhoSZMQzhQLF;g2
+R4
+Z20 w1457826515
+Z21 8hex_decoder.v
+Z22 Fhex_decoder.v
+L0 1
+R9
+r1
+!s85 0
+31
+R10
+R11
+R12
+!s101 -O0
+o-O0
+vlab7part3
+!i10b 1
+Z23 !s100 Ak?Wk58P19Zz3iLD?_maP2
+Z24 IgW9AnA`4dS51cBk:J?AJV2
+Z25 V8^nn^RCVa:Z^2X5bMX=H^1
+R4
+R5
+R6
+R7
+L0 27
+R9
+r1
+!s85 0
+31
+R10
+R11
+R12
+!s101 -O0
+o-O0
+vtickGenerator
+!i10b 1
+Z26 !s100 5@c8lB@]_OAZn<80J>Db22
+Z27 ILO:TcU0>G>iD^`RZV@_XO1
+Z28 VcMJ<Vbg7]9>?0]nB3F>ZU0
+R4
+R5
+R6
+R7
+Z29 L0 336
+R9
+r1
+!s85 0
+31
+R10
+R11
+R12
+!s101 -O0
+o-O0
+Z30 ntick@generator
+vvga_adapter
+!i10b 1
+Z31 !s100 3=mCkkE5FSWBNKBd6H]O50
+Z32 Inm<1]dW@Rj^IMkn;HG`lc0
+Z33 V=9IZS_0]mRUY9h5;^S<n02
+R4
+Z34 w1458613801
+Z35 8vga_adapter.v
+Z36 Fvga_adapter.v
+L0 78
+R9
+r1
+!s85 0
+31
+R10
+R11
+R12
+!s101 -O0
+o-O0
+vvga_address_translator
+!i10b 1
+Z37 !s100 UL:Q5YYAIQ6LoYJbgioTX2
+Z38 IW[=iSm6o`Gbkjn;b>eOl>1
+Z39 VjkDA>HTV?84U;TlaBA;?j1
+R4
+Z40 w1457843675
+Z41 8vga_address_translator.v
+Z42 Fvga_address_translator.v
+L0 4
+R9
+r1
+!s85 0
+31
+R10
+R11
+R12
+!s101 -O0
+o-O0
+vvga_controller
+!i10b 1
+Z43 !s100 oAkN^EOn3S`;A:IRZ84dc2
+Z44 IW@S_aZ9]]]^lgXcge=O<53
+Z45 VZ@h:eW?BE?ilQG22f^T2=3
+R4
+Z46 w1457844926
+Z47 8vga_controller.v
+Z48 Fvga_controller.v
+L0 9
+R9
+r1
+!s85 0
+31
+R10
+R11
+R12
+!s101 -O0
+o-O0
+vvga_pll
+!i10b 1
+Z49 !s100 0_Do9CmXiKKfl==27lNL^3
+Z50 I;YVWGjm<A6aQYgQ^]5N7f3
+Z51 VaJ5@f_ChHz^We^IfRHJId2
+R4
+Z52 w1457843679
+Z53 8vga_pll.v
+Z54 Fvga_pll.v
+L0 36
+R9
+r1
+!s85 0
+31
+R10
+R11
+R12
+!s101 -O0
+o-O0

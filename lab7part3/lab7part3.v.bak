@@ -1,0 +1,706 @@
+/* TODO
+
+•   “Clear board” using asynchronous reset with a KEY.
+
+•   SETTING: Load board with live/dead cells from initial_board based on SW[ : ]
+
+•   SETTING: Select different colors for live/dead cells on SW[ : ]
+
+•   Show the decimal number of living cells on HEX4…HEX0 at each ‘tick’
+
+•   SETTING: Switches choose different speeds “ticks” of game: slow, medium, fast.
+
+•   The 4 Rules of Conway to render the cell states, with the 3 cases: 8 neighbors (middle), 3 neighbors (corner), 5 neighbors (edge).
+
+•   320 x 240px = 160 x 120 cell game board on VGA, with 2x2 pixels blocks = 19,200 registers
+
+•    (Optional: user-defined starting cells… determine a way to ‘pick’ live cells before start with external hardware or something on the board…)
+
+•   (Optional: extra seeder bot that traverses the cells randomly and plants live cells around the board to keep the game going…)
+
+
+*/
+
+
+`timescale 1ns / 1ns
+
+module lab7part3 (
+        CLOCK_50,                       //  On Board 50 MHz
+        KEY,
+        SW,
+        // The ports below are for the VGA output.  Do not change.
+        VGA_CLK,                        //  VGA Clock
+        VGA_HS,                         //  VGA H_SYNC
+        VGA_VS,                         //  VGA V_SYNC
+        VGA_BLANK,                      //  VGA BLANK
+        VGA_SYNC,                       //  VGA SYNC
+        VGA_R,                          //  VGA Red[9:0]
+        VGA_G,                          //  VGA Green[9:0]
+        VGA_B,                          //  VGA Blue[9:0]
+        // Use the following to display:
+        HEX0,
+        HEX1,
+        HEX2,
+        HEX3,
+        HEX4,
+        HEX5,
+        HEX6,
+        HEX7,
+        LEDR,
+        LEDG
+    );
+    
+
+
+    // ------------------------------------------------------------
+    // Define our parameters
+    // ------------------------------------------------------------
+    input        CLOCK_50;  // 50 MHz
+    input        [17:0]   SW;
+    input        [3:0]    KEY;
+    output       [17:0]   LEDR;
+    output       [7:0]    LEDG;
+    output       [6:0]    HEX0, HEX1, HEX2, HEX3, HEX4, HEX5, HEX6, HEX7;
+
+    // Declare your inputs and outputs here
+    // Do not change the following outputs
+    output          VGA_CLK;                //  VGA Clock
+    output          VGA_HS;                 //  VGA H_SYNC
+    output          VGA_VS;                 //  VGA V_SYNC
+    output          VGA_BLANK;              //  VGA BLANK
+    output          VGA_SYNC;               //  VGA SYNC
+    output  [9:0]   VGA_R;                  //  VGA Red[9:0]
+    output  [9:0]   VGA_G;                  //  VGA Green[9:0]
+    output  [9:0]   VGA_B;                  //  VGA Blue[9:0]
+    
+
+
+    // ------------------------------------------------------------
+    // Define our signals...
+    // ------------------------------------------------------------
+    wire resetn;
+    assign resetn = KEY[0];   // active low reset
+    
+    // Create the colour, x, y and writeEn wires that are inputs to the controller.
+    // For X we need eight bits and for Y we need seven bits.
+    wire [8:0] x;
+    wire [8:0] y;
+    wire writeEn;  // signal to plot on the VGA...
+
+    wire [2:0] colour;
+    assign colour = SW[10:8];
+    
+    wire go;
+    assign go = ~KEY[1];   // active HIGH go signal
+    
+    wire load;
+    assign load = ~KEY[3];   // active HIGH 'load' signal
+    
+    // lots of wires to connect our datapath and control with the states
+    wire s_rc, s_rl, s_dc, s_cr, s_ln, s_d;
+    
+    // signal to indicate when looping has finished over 4x4px
+    wire emit_done, emit_display, emit_conway, emit_reset_load, emit_load;
+
+
+    // ------------------------------------------------------------
+    // Module Instantiations
+    // ------------------------------------------------------------
+    // Create one instance of a VGA controller.
+    vga_adapter VGA(
+        .resetn(resetn),
+        .clock(CLOCK_50),
+        .colour(colour),
+        .x(x),
+        .y(y),
+        .plot(writeEn),
+        /* Signals for the DAC to drive the monitor. */
+        .VGA_R(VGA_R),
+        .VGA_G(VGA_G),
+        .VGA_B(VGA_B),
+        .VGA_HS(VGA_HS),
+        .VGA_VS(VGA_VS),
+        .VGA_BLANK(VGA_BLANK),
+        .VGA_SYNC(VGA_SYNC),
+        .VGA_CLK(VGA_CLK));
+    defparam VGA.RESOLUTION = "160x120";
+    defparam VGA.MONOCHROME = "FALSE";
+    defparam VGA.BITS_PER_COLOUR_CHANNEL = 1; // Define the number of colours.
+    // Define initial background image file (.MIF)
+    defparam VGA.BACKGROUND_IMAGE = "black.mif";
+
+    control C0 (
+        .clk50(CLOCK_50),
+        .resetn(resetn),
+        .go(go),
+        .load(load),
+
+        .writeEn(writeEn),
+
+        .s_rc(s_rc),
+        .s_rl(s_rl),
+        .s_dc(s_dc),
+        .s_cr(s_cr), 
+        .s_ln(s_ln),
+        .s_d(s_d),
+          
+        .emit_done(emit_done),
+        .emit_display(emit_display),
+        .emit_conway(emit_conway),
+        .emit_reset_load(emit_reset_load),
+        .emit_load(emit_load)
+
+    );
+
+    datapath D0 (
+        .clk50(CLOCK_50),
+        .resetn(resetn),
+
+        .s_rc(s_rc),
+        .s_rl(s_rl),
+        .s_dc(s_dc),
+        .s_cr(s_cr), 
+        .s_ln(s_ln),
+        .s_d(s_d),
+
+        .x(x[7:0]),
+        .y(y[6:0]),
+
+        .data_in(SW[7:0]),
+        .colour(colour[2:0]),
+        .colour_SW(SW[10:8]),
+          
+        .emit_done(emit_done),
+        .emit_display(emit_display),
+        .emit_conway(emit_conway),
+        .emit_reset_load(emit_reset_load),
+        .emit_load(emit_load)
+    );
+
+    tickGenerator t0 (
+        .clk50(CLOCK_50),
+        .resetn(resetn),
+        .tickSelectSwitch(),
+        .emit_tick(),
+    );
+
+
+
+    // ------------------------------------------------------------
+    // LEDG
+    // ------------------------------------------------------------
+    // States are shown on green LEDs.
+    assign LEDG[0] = s_rc;
+    assign LEDG[1] = s_rl;
+    assign LEDG[2] = s_dc;
+    assign LEDG[3] = s_cr;
+    assign LEDG[4] = s_ln;
+    assign LEDG[7] = s_d;
+
+
+
+    // ------------------------------------------------------------
+    // LEDR
+    // ------------------------------------------------------------
+    // Only light the switches that do things:
+    assign LEDR[17:15] = SW[17:15];
+    assign LEDR[13:12] = SW[13:12];
+    assign LEDR[10:9] = SW[10:9];
+    
+
+
+    // ------------------------------------------------------------
+    // Display on HEX
+    // ------------------------------------------------------------
+    // Turn off all other hex for ease of viewing
+    assign HEX3[6:0] = 7'b111_1111;
+    // Display the tick speed
+    hex_decoder h7( .hex_digit(tickSelectSwitch[1:0]), .segments(HEX7[6:0] );
+    // Display the board selected
+    hex_decoder h2( .hex_digit(), .segments(HEX6[6:0] );
+    // Display the Generation count
+    hex_decoder h1( .hex_digit(genCount[7:4]), .segments(HEX6[6:0] );
+    hex_decoder h1( .hex_digit(genCount[3:0]), .segments(HEX5[6:0] );
+    // Display the total count of live cells
+    // hex_decoder h0( .hex_digit(cellCount[]), .segments(HEX3[6:0] );
+    hex_decoder h0( .hex_digit(cellCount[11:8]), .segments(HEX2[6:0] );
+    hex_decoder h0( .hex_digit(cellCount[7:4]), .segments(HEX1[6:0] );
+    hex_decoder h0( .hex_digit(cellCount[3:0]), .segments(HEX0[6:0] );
+
+endmodule
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+module tickGenerator(
+    input clk50,
+    input resetn,
+    input [1:0] tickSelectSwitch,
+    output emit_tick,
+    );
+
+    // count to determine the period based on CLOCK_50...
+    // (set to defaults)
+    reg [25:0] hertzCount = 26'd22_499_999;
+    reg [25:0] selected_speed = 26'd22_499_999;
+
+    // define speeds here.
+    localparam SUPER = 26'd0_499_999;
+    localparam FAST = 26'd12_499_999;
+    localparam MEDIUM = 26'd49_499_999;
+    localparam SLOW = 26'd199_499_999;
+
+    // ------------------------------------------------------------
+    // Counter to customize the period
+    // ------------------------------------------------------------
+    // ...with asynchronous reset.
+    // Load the tick speed based on switches.
+    always @ (posedge clk50, negedge resetn)
+    begin
+        // reset it
+        if (resetn == 1'b0) begin
+            if (tickSelectSwitch == 2'd3) begin
+                hertzCount <= SUPER;
+                selected_speed <= SUPER;
+            end
+            else if (tickSelectSwitch == 2'd2) begin
+                hertzCount <= FAST;
+                selected_speed <= FAST;
+            end
+            else if (tickSelectSwitch == 2'd1) begin
+                hertzCount <= MEDIUM;
+                selected_speed <= MEDIUM;
+            end
+            else if (tickSelectSwitch == 2'd0) begin
+                hertzCount <= SLOW;
+                selected_speed <= SLOW;
+            end
+            else begin
+                hertzCount <= MEDIUM;  // default, unused.
+                selected_speed <= SLOW;
+            end
+        end
+        else if (hertzCount == 26'd0) begin
+            hertzCount <= selected_speed;        // reset it to saved value.
+        end
+        else
+            hertzCount <= hertzCount - 26'd1;
+    end
+
+
+    // ------------------------------------------------------------
+    // Emit the signal.
+    // ------------------------------------------------------------
+    // set a flag when hertzCount periodically reaches zero.
+    assign emit_tick = (hertzCount == 26'd0) ? 1'b1 : 1'b0;
+
+endmodule
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+module control(
+    input clk50,
+    input resetn,
+    input go,
+    input load,
+    output writeEn,
+
+    output reg s_rc, s_rl, s_dc, s_cr, s_ln, s_d,
+     
+    input emit_done,
+    input emit_display,
+    input emit_conway,
+    input emit_reset_load,
+    input emit_load
+
+    );
+
+    reg [5:0] current_state, next_state; 
+
+    // Different states (unique identifiers) that we assign to current_state, next_state.
+    // 5 bits wide to hold the different numerical values.
+    localparam  S_RESET_CLEAR           = 5'd0,
+                // S_RESET_CLEAR_WAIT      = 5'd1,
+                S_RESET_LOAD            = 5'd2,
+                // S_RESET_LOAD_WAIT       = 5'd3,
+                S_DISPLAY_AND_COUNT      = 5'd4,
+                // S_DISPLAY_AND_COUNT_WAIT = 5'd5,
+                S_CONWAY_RULES          = 5'd6,
+                // S_CONWAY_RULES_WAIT     = 5'd7,
+                S_LOAD_NEXT             = 5'd8,
+                // S_LOAD_NEXT_WAIT        = 5'd9;
+                S_DONE                  = 5'd10;
+                // S_DONE_WAIT             = 5'd11;
+    
+
+
+    // ------------------------------------------------------------
+    // Next-state logic
+    // ------------------------------------------------------------
+    // State table to determine next_state based on current_state and inputs.
+    // Notice the sensitivity list is start (*), so we use blocking assignments.
+    always @ (*)
+    begin: state_table 
+        case (current_state)
+            
+            // S_LOAD_X: next_state = (load) ? S_LOAD_X_WAIT : S_LOAD_X;
+            S_RESET_CLEAR: begin
+                /* This state is responsible for doing:
+                    • Set tick count back to 0.
+                    • Set colour to black
+                    • Set position on screen back to (0, 0).
+                    • Set back emit_done=0
+                    • 
+                */
+                if (emit_reset_load == 1'b1) begin
+                    next_state = S_RESET_LOAD;
+                end
+                else begin
+                    next_state = S_RESET_CLEAR; //loop in next state.
+                end
+            end
+                 
+            S_RESET_LOAD: begin
+                /* This state is responsible for doing:
+                    • Load the initial_board from SW[ ] into current_board
+                    • 
+                */
+                if (emit_display == 1'b1) begin
+                    next_state = S_DISPLAY_AND_COUNT;
+                end
+                else begin
+                    next_state = S_RESET_LOAD; //loop in next state.
+                end
+            end
+
+            S_DISPLAY_AND_COUNT: begin
+                /* This state is responsible for doing:
+                    • Set back emit_display=0
+                    • Transitions to this state when (tick == 1)
+                    • Then sets (tick = 0)
+                    • Sets color from SW[ ] 
+                    • Write the current_board to screen by looping over px locations
+                    • And counts live cells while looping, and emits this value.
+                    • Emit conway_done=1 signal when loop is finished
+                    • 
+                */
+                if (emit_conway == 1'b1) begin
+                    next_state = S_CONWAY_RULES;
+                end
+                else begin
+                    next_state = S_DISPLAY_AND_COUNT; //loop in next state.
+                end
+            end
+
+            S_CONWAY_RULES: begin
+                /* This state is responsible for doing:
+                    • Set conway_done=0
+                    • Loop over board and build next_board based on neighbor amount
+                    • Set emit_load=1 when finished loop
+                    • 
+                */
+                if (emit_load == 1'b1) begin
+                    next_state = S_LOAD_NEXT;
+                end
+                else begin
+                    next_state = S_CONWAY_RULES; //loop in next state.
+                end
+            end
+
+            S_LOAD_NEXT: begin
+                /* This state is responsible for doing:
+                    • Set back to emit_load=0
+                    • First compare both boards in a loop to see if == or != and emit_done=1 if boards are same.
+                    • Load current_board <= next_board
+                    • Increment generation_count +=1 if the boards are different, and emit this signal to display in the top module.
+                    • If boards are not different, emit_display=1
+                    • 
+                */
+                if (emit_done == 1'b1) begin
+                    next_state = S_DONE;
+                end
+                else if (emit_display == 1'b1) begin
+                    next_state = S_DISPLAY_AND_COUNT;
+                end
+                else begin
+                    next_state = S_LOAD_NEXT; //loop in next state.
+                end
+            end
+
+            // We don't need this one here because it actually gets set in
+            // the "always @ (posedge clk50)" block.
+            S_DONE: begin
+                /* This state is responsible for doing:
+                    • Wait in this state until user presses reset.
+                    • 
+                */
+                if (!resetn) begin
+                    next_state = S_RESET_CLEAR;
+                end
+                else begin
+                    next_state = S_DONE; //loop in next state.
+                end
+            end
+
+            default:
+                next_state = S_RESET_CLEAR;
+        endcase
+    end // state_table
+   
+
+
+    // ------------------------------------------------------------
+    // Output logic aka all of our datapath control signals.
+    // ------------------------------------------------------------
+    // Emit signals for current state separately from the next_state assignment
+    // because the next_state can sometimes loop for a while without being
+    // changed to the current state. 
+    always @(*)
+    begin: state_signals
+        // By default make all our signals 0
+        s_rc = 1'b0;
+        s_rl = 1'b0;
+        s_dc = 1'b0;
+        s_cr = 1'b0;
+        s_ln = 1'b0;
+        s_d = 1'b0;
+
+        // sets the control signals to determine which state we're in.
+        case (current_state)
+            S_RESET_CLEAR:
+                s_rc = 1'b1;
+            S_RESET_LOAD:
+                s_rl = 1'b1;
+            S_DISPLAY_AND_COUNT:
+                s_dc = 1'b1;
+            S_CONWAY_RULES:
+                s_cr = 1'b1;
+            S_LOAD_NEXT:
+                s_ln = 1'b1;
+            S_DONE:
+                s_d = 1'b1;
+        // default:    
+        // don't need default since we already made sure all of our outputs were assigned a value at the start of the always block
+        endcase
+    end // state_signals
+
+
+
+    // ------------------------------------------------------------
+    // Current_state State machine registers.
+    // ------------------------------------------------------------
+    // The default on clock edge is to assign the next state.
+    // These are the signals emitted from the datapath to communicate with the
+    // control path: "emit_..."
+    // [Note: otherwise, the datapath should never directly modify the control
+    // path signals -- there should be this separation, and these emit signals
+    // provide the communication between controlpath and datapath.]
+    always @ (posedge clk50)
+    begin: state_FFs
+        // current state gets reset, asynchronously, from ANY current state.
+        if (!resetn) begin // if KEY[0] == 0
+            current_state <= S_RESET_CLEAR;
+        end
+        else if (emit_done == 1'b1)
+            current_state <= S_DONE;
+            // note you cannot set emit_done here because it has type "input"
+            // and there is no way around this. therefore we can only set
+            // emit_done in the datapath.
+            // emit_done <= 1'b0;
+        // else if (emit_display == 1'b1)
+        //     current_state <= S_DISPLAY_AND_COUNT;
+        // else if (emit_conway == 1'b1)
+        //     current_state <= S_CONWAY_RULES;
+        // else if (emit_load == 1'b1)
+        //     current_state <= S_LOAD_NEXT;
+        else
+            // current state gets value stored in next state
+            current_state <= next_state;
+    end // state_FFS
+
+
+    // ------------------------------------------------------------
+    // WriteEnable
+    // ------------------------------------------------------------
+    // (VGA plots pixels) whenever we are in the following states:
+    assign writeEn = (s_rc || s_dc);
+
+endmodule
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+module datapath(
+        input clk50,
+        input resetn,
+        
+        input s_rc, s_rl, s_dc, s_cr, s_ln, s_d,
+
+        output [7:0] x,
+        output [6:0] y,
+
+        input [7:0] data_in,
+
+        output reg [2:0] colour,
+        input [2:0] colour_SW,
+         
+        output reg emit_done,
+        output reg emit_display,
+        output reg emit_conway,
+        output reg emit_reset_load,
+        output reg emit_load
+    );
+
+    // Amount to add to the (x, y) position, to build the square.
+    reg [2:0] x_count = 3'd0;
+    reg [2:0] row = 3'd0;
+    
+    // Registers to maintain the initial values loaded onto x and y
+    reg [7:0] x_reg = 8'd0;
+    reg [6:0] y_reg = 7'd0;
+    
+    // State of x and y.
+    // Keep in mind the max x is 156, and max y is 116
+    assign x = x_reg + x_count;
+    assign y = y_reg + row;
+        
+
+    // ------------------------------------------------------------
+    // These signals represent the communication from controlpath-->datapath.
+    // ------------------------------------------------------------
+    // Perform all the actions for each state here.
+    always @ (posedge clk50) begin
+        if (!resetn) begin
+            
+            colour <= 3'b000;
+
+            x_reg <= 8'd0;
+            y_reg <= 7'd0;
+            x_count <= 3'd0;
+            row <= 3'd0;
+
+            // clear all "emit" signals, where applicable.
+            emit_done <= 1'b0;
+            emit_display <= 1'b0;
+            emit_conway <= 1'b0;
+            emit_reset_load <= 1'b0;
+            emit_load <= 1'b0;
+        end
+        else begin
+            
+            colour <= colour_SW[2:0];
+
+            // STATE: S_RESET_CLEAR
+            // ~~~~~~~~~~~~~~~~~~~~~~
+            if (s_rc) begin
+                x_reg <= data_in[7:0];  // these are the switches
+            end
+
+            // STATE: S_RESET_LOAD
+            // ~~~~~~~~~~~~~~~~~~~~~~
+            if (s_rl) begin
+                y_reg <= data_in[6:0];  // these are the switches
+            end
+            
+            // STATE: S_DISPLAY_AND_COUNT
+            // ~~~~~~~~~~~~~~~~~~~~~~
+            if (s_dc) begin
+                // Stop at the end.
+                if (row == 3'd3 && x_count == 3'd3)
+                    emit_done <= 1'b1;
+
+                else if (x_count >= 3'd3) begin
+                    x_count <= 3'd0;  // max 4 px length, so reset back to zero.
+            
+                    // States of the rows
+                    if (row >= 3'd3)
+                        row <= 3'd0;
+                    else
+                        row <= row + 3'd1;
+                end
+                else if (row < 3'd4)
+                    x_count <= x_count + 1'd1; // keep counting
+            end
+
+            // STATE: S_CONWAY_RULES
+            // ~~~~~~~~~~~~~~~~~~~~~~
+            if (s_cr) begin
+                emit_done <= 1'b0;   // reset back to 0 for next round
+            end
+
+            // STATE: S_LOAD_NEXT
+            // ~~~~~~~~~~~~~~~~~~~~~~
+            if (s_ln) begin
+                emit_done <= 1'b0;   // reset back to 0 for next round
+            end
+
+            // STATE: S_DONE
+            // ~~~~~~~~~~~~~~~~~~~~~~
+            if (s_d) begin
+                emit_done <= 1'b0;   // reset back to 0 for next round
+            end
+
+        end
+    end
+ 
+endmodule
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+module hex_decoder(hex_digit, segments);
+    input [3:0] hex_digit;
+    output reg [6:0] segments;
+   
+    always @(*)
+        case (hex_digit)
+            4'h0: segments = 7'b100_0000;
+            4'h1: segments = 7'b111_1001;
+            4'h2: segments = 7'b010_0100;
+            4'h3: segments = 7'b011_0000;
+            4'h4: segments = 7'b001_1001;
+            4'h5: segments = 7'b001_0010;
+            4'h6: segments = 7'b000_0010;
+            4'h7: segments = 7'b111_1000;
+            4'h8: segments = 7'b000_0000;
+            4'h9: segments = 7'b001_1000;
+            4'hA: segments = 7'b000_1000;
+            4'hB: segments = 7'b000_0011;
+            4'hC: segments = 7'b100_0110;
+            4'hD: segments = 7'b010_0001;
+            4'hE: segments = 7'b000_0110;
+            4'hF: segments = 7'b000_1110;
+            default: segments = 7'h7f;
+        endcase
+endmodule
+

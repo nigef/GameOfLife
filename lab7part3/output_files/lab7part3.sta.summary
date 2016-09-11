@@ -1,0 +1,93 @@
+------------------------------------------------------------
+TimeQuest Timing Analyzer Summary
+------------------------------------------------------------
+
+Type  : Slow Model Setup 'CLOCK_50'
+Slack : -4.204
+TNS   : -7596.909
+
+Type  : Slow Model Setup 'VGA|mypll|altpll_component|pll|clk[0]'
+Slack : 31.888
+TNS   : 0.000
+
+Type  : Slow Model Hold 'CLOCK_50'
+Slack : -0.357
+TNS   : -1.542
+
+Type  : Slow Model Hold 'VGA|mypll|altpll_component|pll|clk[0]'
+Slack : 0.391
+TNS   : 0.000
+
+Type  : Slow Model Recovery 'VGA|mypll|altpll_component|pll|clk[0]'
+Slack : -1.839
+TNS   : -36.544
+
+Type  : Slow Model Recovery 'CLOCK_50'
+Slack : -0.043
+TNS   : -0.344
+
+Type  : Slow Model Removal 'CLOCK_50'
+Slack : -0.349
+TNS   : -3.766
+
+Type  : Slow Model Removal 'VGA|mypll|altpll_component|pll|clk[0]'
+Slack : 2.036
+TNS   : 0.000
+
+Type  : Slow Model Minimum Pulse Width 'KEY[0]'
+Slack : -1.222
+TNS   : -1.222
+
+Type  : Slow Model Minimum Pulse Width 'CLOCK_50'
+Slack : 7.620
+TNS   : 0.000
+
+Type  : Slow Model Minimum Pulse Width 'VGA|mypll|altpll_component|pll|clk[0]'
+Slack : 17.873
+TNS   : 0.000
+
+Type  : Fast Model Setup 'CLOCK_50'
+Slack : -1.453
+TNS   : -1957.613
+
+Type  : Fast Model Setup 'VGA|mypll|altpll_component|pll|clk[0]'
+Slack : 36.331
+TNS   : 0.000
+
+Type  : Fast Model Hold 'CLOCK_50'
+Slack : -0.491
+TNS   : -5.220
+
+Type  : Fast Model Hold 'VGA|mypll|altpll_component|pll|clk[0]'
+Slack : 0.215
+TNS   : 0.000
+
+Type  : Fast Model Recovery 'VGA|mypll|altpll_component|pll|clk[0]'
+Slack : -0.886
+TNS   : -17.590
+
+Type  : Fast Model Recovery 'CLOCK_50'
+Slack : 0.428
+TNS   : 0.000
+
+Type  : Fast Model Removal 'CLOCK_50'
+Slack : -0.374
+TNS   : -5.134
+
+Type  : Fast Model Removal 'VGA|mypll|altpll_component|pll|clk[0]'
+Slack : 1.231
+TNS   : 0.000
+
+Type  : Fast Model Minimum Pulse Width 'KEY[0]'
+Slack : -1.222
+TNS   : -1.222
+
+Type  : Fast Model Minimum Pulse Width 'CLOCK_50'
+Slack : 7.620
+TNS   : 0.000
+
+Type  : Fast Model Minimum Pulse Width 'VGA|mypll|altpll_component|pll|clk[0]'
+Slack : 17.873
+TNS   : 0.000
+
+------------------------------------------------------------

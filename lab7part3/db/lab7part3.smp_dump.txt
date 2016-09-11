@@ -1,0 +1,9 @@
+
+State Machine - |lab7part3|control:C0|current_state
+Name current_state.S_DONE current_state.S_LOAD_NEXT current_state.S_CONWAY_RULES current_state.S_DISPLAY_AND_COUNT current_state.S_RESET_LOAD current_state.S_RESET_CLEAR 
+current_state.S_RESET_CLEAR 0 0 0 0 0 0 
+current_state.S_RESET_LOAD 0 0 0 0 1 1 
+current_state.S_DISPLAY_AND_COUNT 0 0 0 1 0 1 
+current_state.S_CONWAY_RULES 0 0 1 0 0 1 
+current_state.S_LOAD_NEXT 0 1 0 0 0 1 
+current_state.S_DONE 1 0 0 0 0 1 
