@@ -17,15 +17,16 @@ A visual simulation of Conway's Game of Life, with different options in speed an
 
 
 
-Project Motivations
+## Project Motivations
 
-How does this project relate to academic material?
-==================================================================
+#### How does this project relate to academic material?
+
 Cell state is stored as 1 = living, 0 = dead in registers (D Flipflops). The visualization of the simulation is accomplished through VGA. The speed of the game is determined by the machine CLOCK, and the speed of the game is adjusted through a counter. The simulation can be adjusted with Switches on the board.
 
 
-What's cool about this project?
-==================================================================
+
+#### What's cool about this project?
+
 Conway's Game of Life is a simulation of cellular Automaton based on cellular interactions between neighboring cells. It is interesting to scale the game at a large size using efficient hardware designs to visualize a chaotic ecosystem behaving under a precise set of rules, through a combination of FPGA and VGA technologies.
 
 
@@ -82,4 +83,4 @@ Conway's Game of Life is a simulation of cellular Automaton based on cellular in
 - use something like "Inferred RAM" instead of the 50x50 bit board `initial_board_flat`, which takes an insane amount of time to compile.
 - Fix bug in the code.
 
-
+Note: github replaced many of the CLRF chars in `lab7part3/*` with LF.. incase something doesn't work this could be it..
